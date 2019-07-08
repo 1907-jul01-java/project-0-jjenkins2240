@@ -6,26 +6,26 @@ A Mavenized Java 8 CLI program connected to a PostgreSQL database. Submit a READ
 - [x] Java SE 8
 - [x] Maven 3
 - [] PostgreSQL 9+
-- [] `java.io` Scanner, BufferedReader/Buffered
-- [] `java.util` Collections API
+- [x] `java.io` Scanner, BufferedReader/Buffered
+- [x] `java.util` Collections API
 - [] `java.sql` JDBC - PreparedStatement, CallableStatement
 - [] JUnit 4
 - [] log4j (or other logging framework)
 
 ### Architecture
-- [] Multiple Packages
-- [] Interfaces/Abstract Classes
-- [] OOP - Abstraction, Encapsulation, Inheritance, Polymorphism
-- [] Singleton
-- [] Factory
+- [x] Multiple Packages
+- [x] Interfaces/Abstract Classes
+- [x] OOP - Abstraction, Encapsulation, Inheritance, Polymorphism
+- [x] Singleton
+- [x] Factory
 - [] SQL Normalization
 - [] PL/pgSQL
 
 ### Functionality
-- [] CRUD - Create, Read, Update, Delete
-- [] CLI - command-line args and/or event-driven text menus
-- [] Login - Authentication & Authorization
-- [] Persisting State - Save/Load to file or DB
+- [x] CRUD - Create, Read, Update, Delete
+- [x] CLI - command-line args and/or event-driven text menus
+- [x] Login - Authentication & Authorization
+- [x] Persisting State - Save/Load to file or DB
 
 ### Presentation
 - [] Prepare a demonstration of functionality requirements, no more than 5-10 minutes
