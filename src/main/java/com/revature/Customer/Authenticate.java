@@ -8,6 +8,7 @@ package com.revature.Customer;
 import java.io.*;
 import java.util.*;
 import java.sql.*;
+import com.revature.employee.*;
         
 public class Authenticate {
     private String user;
@@ -16,6 +17,7 @@ public class Authenticate {
     private String datapass;
     private Connection connect;
     private boolean success;
+    private char person;
     public Authenticate(String user, String pass, Connection connect){
         this.user=user;
         this.pass=pass;
@@ -25,6 +27,45 @@ public class Authenticate {
         this.user=user;
         this.connect=connect;
     }
+    public boolean validateemp(String uname, String upass){
+         this.user=uname;
+      this.pass=upass;
+         
+        EmpMenu edatas;
+
+        List<EmpMenu> edata=new ArrayList<>();
+        try{
+   PreparedStatement pstate=connect.prepareStatement("select * from employee inner join emplogin ON employee.employeid=emplogin.employeid Where emplogin.username=? AND emplogin.password=?");
+      pstate.setString(1, user);
+      pstate.setString(2, pass);
+      ResultSet results=pstate.executeQuery();
+      
+     
+         
+      while(results.next()){
+         edatas = new EmpMenu();
+         edatas.setId(results.getInt("employeid"));
+          edatas.setFirstname(results.getString("firstname"));
+          edatas.setMiddlename(results.getString("middlename"));
+          edatas.setLastname(results.getString("lastname"));
+          edatas.setAdmin(results.getString("administrator"));
+         edatas.setFullname();
+          edata.add(edatas);
+          
+      }
+    
+    }catch(SQLException e){
+    System.out.println(e);}
+ 
+        if(edata.size()==0&& edata.size()==0){
+            return false;
+        }else{
+            return true;
+       
+            
+
+}}
+    
     
     public boolean validate(String uname, String upass){
         //use a prepare statement and join with custdata and customer table to find the user associated with the username and password.

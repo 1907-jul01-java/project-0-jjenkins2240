@@ -9,6 +9,7 @@ import java.util.*;
 import java.sql.*;
 import java.util.logging.Logger;
 import com.revature.Accounts.*;
+import com.revature.employee.*;
 public class Menu {
    private Connection connect;
     Scanner sc=new Scanner(System.in);
@@ -41,19 +42,48 @@ public class Menu {
         }
     }
     public void login()throws IOException{
-       
-        System.out.print("Enter your Username: ");
+       int choice;
+       System.out.println("1. "+"\t"+"Customer login");
+       System.out.println("2. "+"\t"+"Employee login");
+       choice=sc.nextInt();
+       switch(choice){
+           case 1:
+               System.out.print("Enter your Username: ");
                 user=sc.next();
         System.out.print("\n"+"Enter your Password: ");
                 pass=sc.next();
                 Authenticate a=new Authenticate(user, pass,connect);
                success= a.validate(user, pass);
                if(success==false){
+                   
+                   
                    System.out.println("Invalid Username or Password. Please try again");
                    this.login();
+                
+                       
                }else
                    this.Usermenu();
     
+               break;
+           case 2:System.out.print("Enter your Username: ");
+                user=sc.next();
+        System.out.print("\n"+"Enter your Password: ");
+                pass=sc.next();
+                Authenticate b=new Authenticate(user, pass,connect);
+               success= b.validateemp(user, pass);
+               if(success==false){
+                   
+                   
+                   System.out.println("Invalid Username or Password. Please try again");
+                   this.login();
+                
+                       
+               }else{
+                   EmpMenu employee=new EmpMenu(user,pass,this.connect);}
+               
+               break;
+       }
+        
     }
     public void Usermenu()throws IOException{
         int id=NC.getId();
@@ -61,10 +91,9 @@ public class Menu {
         System.out.println("Welcome "+NC.getFullname());
         System.out.println("\n"+"\t"+"User Options");
         System.out.println("1."+"\t"+"Create new Account");
-        System.out.println("2."+"\t"+"Delete an existing Account");
-        System.out.println("3."+"\t"+"View Accounts");
-        System.out.println("4."+"\t"+"Manage Accounts");
-        System.out.println("5."+"\t"+"Logout"+"\n");
+        System.out.println("2."+"\t"+"View Accounts");
+        System.out.println("3."+"\t"+"Manage Accounts");
+        System.out.println("4."+"\t"+"Logout"+"\n");
         choice=sc.nextInt();
         switch(choice){
             case 1:
@@ -73,17 +102,16 @@ public class Menu {
                 System.out.println("Your account has been created and is pending. Please wait for a bank employee to validate and open the account");
                 this.Usermenu();
                 break;
+
             case 2:
-                break;
-            case 3:
                 neww.view();
                 this.Usermenu();
                 break;
-            case 4:
+            case 3:
                 neww.change();
                 this.Usermenu();
                 break;
-            case 5:
+            case 4:
                 System.out.println("Thank you for your business!");
                 System.out.println("We look forward to your next visit!");
                 this.startmenu();

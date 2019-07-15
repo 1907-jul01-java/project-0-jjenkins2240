@@ -63,7 +63,8 @@ public class Account extends bankaccounts{
           System.out.println("\n"+"Account: "+results.getInt("acctnum"));
           System.out.println("Status: "+results.getString("status"));
           System.out.println("Type of Account: "+results.getString("accttype"));
-          System.out.println("Account Balance: "+results.getDouble("balance")+"\n");
+          System.out.println("Account Balance: "+results.getDouble("balance"));
+          System.out.println("Overdraft Ammount:"+results.getDouble("overdraft")+"\n");
           
           }
         }catch(SQLException e){
@@ -73,9 +74,10 @@ public class Account extends bankaccounts{
 
     @Override
    public void change()throws IOException {
+
          //this class will accept user input for what kind of changes they want to make
        System.out.println("Enter the Account Number: ");
-       acctid=sc.nextInt();
+       this.acctid=sc.nextInt();
        int choice;
        int innerchoice;
        try{
@@ -88,6 +90,7 @@ public class Account extends bankaccounts{
               System.out.println("Enter a different number and try again."+"\n");
               this.change();
           }else{
+              results.next();
               System.out.println("\n"+"Account: "+results.getInt("acctnum"));
           System.out.println("Status: "+results.getString("status"));
           System.out.println("Type of Account: "+results.getString("accttype"));
@@ -110,11 +113,15 @@ public class Account extends bankaccounts{
                       this.withdraw(acctid);
                       System.out.println("Do you wish to make anymore changes?"+"\t"+"1. Yes"+"\t"+"2. No");
                       innerchoice=sc.nextInt();
+                      if(innerchoice==1)
+                          this.change();
                       break;
                   case 3:
                       this.closeacct(acctid);
                       System.out.println("Do you wish to make anymore changes?"+"\t"+"1. Yes"+"\t"+"2. No");
                       innerchoice=sc.nextInt();
+                      if(innerchoice==1)
+                          this.change();
                       break;
               }
           }
@@ -124,7 +131,7 @@ public class Account extends bankaccounts{
            
            
        }catch(SQLException e){
-           
+           System.out.println(e);
        }
        
        
@@ -134,19 +141,22 @@ public class Account extends bankaccounts{
    public void deposit(int id) {
        double b;
        double ammount;
+  
          try{
-            PreparedStatement pstate=connect.prepareStatement("select * from bankaccount inner join customers on bankaccount.acctowner=customers.id Where customers.id=?");
+           PreparedStatement pstate=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=? ");
             pstate.setInt(1, id);
+            pstate.setInt(2,customerid);
             ResultSet results=pstate.executeQuery();
             results.next();
             b=results.getDouble("balance");
             System.out.println("How much do you wish to deposit? Please include the ammount of cents even if it is 0. (Ex: 25.00");
             ammount=sc.nextDouble();
             b+=ammount;
-            PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where acctowner=?");
+            PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
             input.setDouble(1, b);
-            input.setInt(2, id);
-            
+            input.setInt(2, customerid);
+            input.setInt(3,id);
+            input.executeQuery();
         }catch(SQLException e){
             
         }
@@ -159,8 +169,9 @@ public class Account extends bankaccounts{
        double ammount;
        double overdraft;
         try{
-            PreparedStatement pstate=connect.prepareStatement("select * from bankaccount inner join customers on bankaccount.acctowner=customers.id Where customers.id=?");
+          PreparedStatement pstate=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=? ");
             pstate.setInt(1, id);
+            pstate.setInt(2,customerid);
             ResultSet results=pstate.executeQuery();
             results.next();
             b=results.getDouble("balance");
@@ -168,7 +179,8 @@ public class Account extends bankaccounts{
             System.out.println("How much do you wish to withdraw? Please include the ammount of cents even if it is 0. (Ex: 25.00");
             ammount=sc.nextDouble();
             b-=ammount;
-            double draft=overdraft-ammount;
+            System.out.println(b);
+            double draft=overdraft-b;
             
             if(b<0){
                 if(draft>=0){
@@ -176,15 +188,18 @@ public class Account extends bankaccounts{
                 System.out.println("1. Yes"+"\t"+"2. No");
                 choice=sc.nextInt();
                 if(choice==1){
-                    PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where acctowner=?");
-            input.setDouble(1, b);
-            input.setInt(2, id);
-            input.executeQuery();
-                    PreparedStatement over=connect.prepareCall("Update bankaccount set overdraft=? Where acctowner=?");
-                    over.setDouble(1, draft);
-                    over.setInt(2,id);
-                    over.executeQuery();
                     System.out.println("Withdrawl Successful.");
+                    PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
+            input.setDouble(1, b);
+            input.setInt(2, customerid);
+            input.setInt(3,id);
+            input.executeQuery();
+                    PreparedStatement over=connect.prepareCall("Update bankaccount set overdraft=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
+                    over.setDouble(1, draft);
+                    over.setInt(2,customerid);
+                    over.setInt(3,id);
+                    over.executeQuery();
+                    
                 }
                 if(choice==2){
                     System.out.println("No money was withdawn");
@@ -192,13 +207,14 @@ public class Account extends bankaccounts{
             }else{
                     System.out.println("Cannot withdraw the specified ammount money. You have insufficent bank account funds and/or overdraw funds");
                 }
-            }else{
-                
-                 PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where acctowner=?");
+            } if(b>=0){
+                System.out.println("Withdrawl Successful");
+                 PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where acctowner=? And bankaccount.acctnum=?");
             input.setDouble(1, b);
-            input.setInt(2, id);
+            input.setInt(2, customerid);
+            input.setInt(3, id);
             input.executeQuery();
-            System.out.println("Withdrawl Successful");
+            
             }
             
             
@@ -211,22 +227,22 @@ public class Account extends bankaccounts{
     @Override
     public void closeacct(int id) throws IOException {
         double b;
-        int anum;
+       
           try{
-            PreparedStatement pstate=connect.prepareStatement("select * from bankaccount inner join customers on bankaccount.acctowner=customers.id Where customers.id=?");
+             PreparedStatement pstate=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=? ");
             pstate.setInt(1, id);
+            pstate.setInt(2,customerid);
             ResultSet results=pstate.executeQuery();
             results.next();
-            b=results.getDouble("balance");
-            anum=results.getInt("acctnum");
+          
          b=results.getDouble("balance");
          if(b!=0.0){
              System.out.println("Cannot delete account. The balance must be $0.0 to delete account.");
              System.out.println("Your current balance for Account: "+results.getInt("acctnum")+" is "+b);
          }else{
-             PreparedStatement delete=connect.prepareStatement("delete from bankaccount where acctnum=? AND where acctowner=?");
-             delete.setInt(1,anum);
-             delete.setInt(2, id);
+             PreparedStatement delete=connect.prepareStatement("delete from bankaccount where  bankaccount.acctnum=? AND bankaccount.acctowner=?");
+             delete.setInt(1,id);
+             delete.setInt(2, customerid);
              delete.executeQuery();
              System.out.println("The account has been deleted");
          }

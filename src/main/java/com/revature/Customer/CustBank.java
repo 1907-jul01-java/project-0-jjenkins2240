@@ -1,8 +1,10 @@
 package com.revature.Customer;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
+import com.revature.employee.*;
 public class CustBank {
 
   public static void main(String args[])throws IOException{
