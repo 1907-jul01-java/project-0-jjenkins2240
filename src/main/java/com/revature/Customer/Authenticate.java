@@ -15,10 +15,15 @@ public class Authenticate {
     private String datauser;
     private String datapass;
     private Connection connect;
+    private boolean success;
     public Authenticate(String user, String pass, Connection connect){
         this.user=user;
         this.pass=pass;
        this.connect=connect;
+    }
+    public Authenticate(String user, Connection connect){
+        this.user=user;
+        this.connect=connect;
     }
     
     public boolean validate(String uname, String upass){
@@ -35,6 +40,7 @@ public class Authenticate {
       ResultSet results=pstate.executeQuery();
       while(results.next()){
          datas = new NC();
+         datas.setId(results.getInt("id"));
           datas.setFirst(results.getString("firstname"));
           datas.setMiddle(results.getString("midname"));
           datas.setLast(results.getString("lastname"));
@@ -52,4 +58,27 @@ public class Authenticate {
             return true;
 
 }
+    public boolean validateusername(){
+      
+    String s = null;
+      
+
+        try{
+  
+      PreparedStatement pstate=connect.prepareStatement("select * from custdata Where custdata.username=?");
+      pstate.setString(1, this.user);
+       ResultSet results=pstate.executeQuery();
+       if(!results.isBeforeFirst()){
+           this.success=true;
+       }else
+           this.success=false;
+      
+     
+    }catch(SQLException e){
+    System.out.println(e);}
+
+    return success;
+        
+    }
+
 }

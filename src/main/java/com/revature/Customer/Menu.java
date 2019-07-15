@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.*;
 import java.sql.*;
 import java.util.logging.Logger;
+import com.revature.Accounts.*;
 public class Menu {
    private Connection connect;
     Scanner sc=new Scanner(System.in);
@@ -18,7 +19,7 @@ public class Menu {
     private boolean success;
     public Menu(Connection connect)throws IOException{
         this.connect=connect;
-        this.startmenu();
+        
     }
     public void startmenu()throws IOException{
    
@@ -40,7 +41,7 @@ public class Menu {
         }
     }
     public void login()throws IOException{
-        if(choice==1){
+       
         System.out.print("Enter your Username: ");
                 user=sc.next();
         System.out.print("\n"+"Enter your Password: ");
@@ -52,13 +53,12 @@ public class Menu {
                    this.login();
                }else
                    this.Usermenu();
-        }
-    }
-    public void NewUser(){
-        
+    
     }
     public void Usermenu()throws IOException{
-        System.out.println("Welcome back "+NC.getFullname());
+        int id=NC.getId();
+        Account neww=new Account(this.connect,id);
+        System.out.println("Welcome "+NC.getFullname());
         System.out.println("\n"+"\t"+"User Options");
         System.out.println("1."+"\t"+"Create new Account");
         System.out.println("2."+"\t"+"Delete an existing Account");
@@ -68,12 +68,20 @@ public class Menu {
         choice=sc.nextInt();
         switch(choice){
             case 1:
+                
+                neww.create();
+                System.out.println("Your account has been created and is pending. Please wait for a bank employee to validate and open the account");
+                this.Usermenu();
                 break;
             case 2:
                 break;
             case 3:
+                neww.view();
+                this.Usermenu();
                 break;
             case 4:
+                neww.change();
+                this.Usermenu();
                 break;
             case 5:
                 System.out.println("Thank you for your business!");
