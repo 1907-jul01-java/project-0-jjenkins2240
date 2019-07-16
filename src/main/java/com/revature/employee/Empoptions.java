@@ -8,6 +8,7 @@ package com.revature.employee;
 import java.io.*;
 import java.util.*;
 import java.sql.*;
+import com.revature.Accounts.*;
 
 public class Empoptions {
     int custid;
@@ -49,6 +50,9 @@ public class Empoptions {
         System.out.println("1. "+"\t"+"Change Status");
         System.out.println("2. "+"\t"+"Deposit funds");
         System.out.println("3. "+"\t"+"Remove funds");
+        System.out.println("4. "+"\t"+"Close account");
+        System.out.println("5. "+"\t"+"transfer funds");
+        System.out.println("6. "+"\t"+"Reset Overdraft");
         int choice=sc.nextInt();
         switch(choice){
             case 1:
@@ -60,15 +64,39 @@ public class Empoptions {
             case 3:
                 this.withdraw();
                 break;
+            case 4:
+                this.closeacct();
+                break;
+            case 5:
+                this.transfer();
+                break;
+            case 6:
+                this.resetover();
+                break;
         }
     }
-    public void changestatus()throws IOException{
-        this.getcustacct();
+    public void resetover()throws IOException{
         this.getcustdata();
+        this.getcustacct();
+        try{
+             PreparedStatement pstate=connect.prepareStatement("update bankaccount set overdraft=? Where bankaccount.acctnum=? AND bankaccount.acctowner=?");
+             pstate.setDouble(1,500.00);
+             pstate.setInt(2, custacctnum);
+             pstate.setInt(3,custid);
+             pstate.executeQuery();
+        }catch(SQLException e){
+            
+        }
+       
+    }
+    public void changestatus()throws IOException{
+        this.getcustdata();
+        this.getcustacct();
+        
         try{
             System.out.println("Enter the Account's new status: ");
             String status=sc.next();
-         PreparedStatement pstate=connect.prepareStatement("Update bankaccount set status=? Where customers.id=? AND bankaccount.acctnum=?");
+         PreparedStatement pstate=connect.prepareStatement("Update bankaccount set status=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
             pstate.setString(1,status);
             pstate.setInt(2, custid);
             pstate.setInt(3, custacctnum);
@@ -83,7 +111,7 @@ public class Empoptions {
     public void deposit()throws IOException{
          double b;
        double ammount;
-       if(admin.toLowerCase()=="y"){
+       if(admin.toLowerCase().equals("y")){
            this.getcustdata();
            this.getcustacct();
          try{
@@ -95,21 +123,27 @@ public class Empoptions {
             b=results.getDouble("balance");
             System.out.println("How much do you wish to deposit? Please include the ammount of cents even if it is 0. (Ex: 25.00");
             ammount=sc.nextDouble();
+            if(ammount<0){
+                System.out.println("You cannot deposit a negative ammount");
+                this.deposit();
+            }else{
             b+=ammount;
             PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
             input.setDouble(1, b);
             input.setInt(2, custid);
             input.setInt(3,custacctnum);
-            input.executeQuery();
+           input.executeQuery();
+            }
         }catch(SQLException e){
             
-        }}
+        }System.out.println("Account Updated");}else
+            System.out.println("You do not have suffecient admin rights to perform this action.");
     }public void withdraw()throws IOException{
         int choice;
         double b;
        double ammount;
        double overdraft;
-       if(admin.toLowerCase()=="y"){
+       if(admin.toLowerCase().equals("y")){
            this.getcustdata();
            this.getcustacct();
         try{
@@ -138,7 +172,7 @@ public class Empoptions {
             input.setInt(2, custid);
             input.setInt(3,custacctnum);
             input.executeQuery();
-                    PreparedStatement over=connect.prepareCall("Update bankaccount set overdraft=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
+                    PreparedStatement over=connect.prepareStatement("Update bankaccount set overdraft=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
                     over.setDouble(1, draft);
                     over.setInt(2,custid);
                     over.setInt(3,custacctnum);
@@ -152,7 +186,7 @@ public class Empoptions {
                     System.out.println("Cannot withdraw the specified ammount money. You have insufficent bank account funds and/or overdraw funds");
                 }
             } if(b>=0){
-                System.out.println("Withdrawl Successful");
+                
                  PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where acctowner=? And bankaccount.acctnum=?");
             input.setDouble(1, b);
             input.setInt(2,custid);
@@ -164,7 +198,42 @@ public class Empoptions {
             
         }catch(SQLException e){
         }
+     
+            System.out.println("Withdrawl Successful");
+        }else
+            System.out.println("You do not have suffecient admin rights to perform this action.");
+    }
+    public void closeacct()throws IOException{
+           double b;
+           if(admin.toLowerCase().equals("y")){
+           this.getcustdata();
+           this.getcustacct();
+          try{
+             PreparedStatement pstate=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=? ");
+            pstate.setInt(1,custacctnum);
+            pstate.setInt(2,custid);
+            ResultSet results=pstate.executeQuery();
+            results.next();
+          
+         b=results.getDouble("balance");
+         if(b!=0.0){
+             System.out.println("Cannot delete account. The balance must be $0.0 to delete account.");
+             System.out.println("Your current balance for Account: "+results.getInt("acctnum")+" is "+b);
+             this.change();
+         }else{
+             PreparedStatement delete=connect.prepareStatement("delete from bankaccount where  bankaccount.acctnum=? AND bankaccount.acctowner=?");
+             delete.setInt(1,custacctnum);
+             delete.setInt(2, custid);
+             delete.executeQuery();
+             System.out.println("The account has been deleted");
+         }
+             
+         
+        }catch(SQLException e){
+            
         }
+    }else
+               System.out.println("You do not have suffecient admin rights to perform this action.");
     }
     public void getcustdata()throws IOException{
         System.out.println("Enter the Customers first name: "+"\t");
@@ -211,4 +280,90 @@ public class Empoptions {
     public void setAdmin(String s){
         this.admin=s;
     }
-}
+     public void transfer()throws IOException{
+       int acct1;
+       int acct2;
+       double b1;
+       double b2;
+       double transfer;
+       String status1="";
+       String status2;
+       if(admin.toLowerCase().equals("y")){
+           this.getcustdata();
+
+       try{System.out.println("Enter the Account number for the account you will be transfering funds to");
+       acct1=sc.nextInt();
+           PreparedStatement acc1=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=?");
+           acc1.setInt(1,acct1);
+           acc1.setInt(2,custid);
+           ResultSet results= acc1.executeQuery();
+           if(!results.isBeforeFirst()){
+               System.out.println("The account you entered does not exist for the user that was given.");
+           }else{
+               results.next();
+               status1=results.getString("status");
+               if(status1.toLowerCase().equals("open")){
+                   
+              
+               
+               b1=results.getDouble("balance");
+              
+               System.out.println("Enter the Account number for the account you are transfering funds from");
+               acct2=sc.nextInt();
+               PreparedStatement acc2=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=?");
+               acc2.setInt(1,acct2);
+               acc2.setInt(2,custid);
+               ResultSet second=acc2.executeQuery();
+               if(!second.isBeforeFirst()){
+                   System.out.println("The account you entered does not exist for the user that was given");
+               }else{
+                   second.next();
+                   status2=second.getString("status");
+                   
+                   if(status2.toLowerCase().equals("open")){
+                   
+                   b2=second.getDouble("balance");
+                  
+                   if(b2<=0){
+                       System.out.println("You cannot transfer funds from or to an account that has a 0 or negative balance.");
+                   }
+                   else
+                   {
+                       System.out.println("Enter the ammount you wish to transfer: ");
+                       transfer=sc.nextDouble();
+                       if(transfer<0||(b2-transfer)<0){
+                           System.out.println("The ammount of funds you wish to transfer is invalid. Either a negative ammount was entered or it was greater than the current balance of the account you are trying to transfer funds from");
+                       }
+                       else{
+                           b1+=transfer;
+                           b2-=transfer;
+                           PreparedStatement update2=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
+                           update2.setDouble(1,(b2));
+                           update2.setInt(2, acct2);
+                           update2.executeUpdate();
+                           
+                           PreparedStatement update1=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
+                           update1.setDouble(1,(b1));
+                           update1.setInt(2,acct1);
+                           update1.executeUpdate();
+                           
+                       }
+                       
+                   }
+               }else
+                       System.out.println("Cannot make transfers from or to an account that has a 0 or negative balance");
+               }
+                   
+           }else
+                   System.out.println("Cannot make transfers to or from account that is not 'open'");
+                   }
+           
+       }catch(SQLException e){
+           System.out.println(e);
+       }
+    }else
+           System.out.println("You do not have suffecient admin rights to perform this action.");
+           }
+    }
+
+

@@ -35,6 +35,7 @@ public class EmpMenu {
         this.connect=connect;
         this.getdata();
         this.EMenu();
+        
     }
     public void getdata(){
         try{
@@ -47,6 +48,8 @@ public class EmpMenu {
             this.middlename=results.getString(("middlename"));
             this.lastname=results.getString("lastname");
             this.id=results.getInt("employeid");
+            this.admin=results.getString("administrator");
+            System.out.println(admin);
             this.setFullname();
             
         }catch(SQLException e){
@@ -68,7 +71,8 @@ public class EmpMenu {
                 this.EMenu();
                 break;
             case 2:
-                   option.change();         
+                   option.change();
+                   this.EMenu();
                 break;
             case 3:
                 System.out.println("Goodbye!");
