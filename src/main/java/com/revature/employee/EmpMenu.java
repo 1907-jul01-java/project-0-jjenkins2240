@@ -60,8 +60,9 @@ public class EmpMenu {
           System.out.println("Welcome Employee "+this.fullname);
         System.out.println("\n"+"\t"+"User Options");
         System.out.println("1."+"\t"+"View Accounts");
-        System.out.println("2."+"\t"+"Manage Accounts");
-        System.out.println("3."+"\t"+"Logout"+"\n");
+        System.out.println("2."+"\t"+"View transactions for an account");
+        System.out.println("3."+"\t"+"Manage Accounts");
+        System.out.println("4."+"\t"+"Logout"+"\n");
         choice=sc.nextInt();
         Empoptions option=new Empoptions(this.connect);
         option.setAdmin(this.admin);
@@ -71,10 +72,13 @@ public class EmpMenu {
                 this.EMenu();
                 break;
             case 2:
+                 option.viewtransactions();
+                this.EMenu();
+            case 3:
                    option.change();
                    this.EMenu();
                 break;
-            case 3:
+            case 4:
                 System.out.println("Goodbye!");
                 Menu mu=new Menu(this.connect);
                 

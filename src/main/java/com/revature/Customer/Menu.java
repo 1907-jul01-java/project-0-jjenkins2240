@@ -93,7 +93,9 @@ public class Menu {
         System.out.println("1."+"\t"+"Create new Account");
         System.out.println("2."+"\t"+"View Accounts");
         System.out.println("3."+"\t"+"Manage Accounts");
-        System.out.println("4."+"\t"+"Logout"+"\n");
+        System.out.println("4."+"\t"+"View Transactions");
+        System.out.println("5."+"\t"+"Change Password");
+        System.out.println("6."+"\t"+"Logout"+"\n");
         choice=sc.nextInt();
         switch(choice){
             case 1:
@@ -112,6 +114,14 @@ public class Menu {
                 this.Usermenu();
                 break;
             case 4:
+                neww.viewtransactions();
+                this.Usermenu();
+                break;
+            case 5:neww.changepass();
+                this.Usermenu();
+                break;
+                
+            case 6:
                 System.out.println("Thank you for your business!");
                 System.out.println("We look forward to your next visit!");
                 this.startmenu();

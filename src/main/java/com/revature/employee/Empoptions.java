@@ -24,6 +24,29 @@ public class Empoptions {
     public Empoptions(Connection connect){
         this.connect=connect;
     }
+    public void viewtransactions()throws IOException{
+        try{this.getcustdata();
+        this.getcustacct();
+            PreparedStatement pstate=connect.prepareStatement("select* from transactions where transactions.acctnum=? AND transactions.custid=?");
+            pstate.setInt(1,custacctnum);
+            pstate.setInt(2, custid);
+            ResultSet results=pstate.executeQuery();
+            if(!results.isBeforeFirst()){
+                System.out.println("The account number specified does not match any account numbers for this user.");
+            }else{
+          while(results.next()){
+          System.out.println("\n"+"Account number: "+results.getString("acctnum"));
+          System.out.println("Transaction: "+results.getString("t_type"));
+          System.out.println("Time: "+results.getTime("t_time"));
+          System.out.println("Starting balance: "+results.getDouble("startbalance"));
+          System.out.println("Ending balance: "+results.getString("endbalance")+"\n");
+
+          
+          }}
+        }catch(SQLException e){
+            System.out.println(e);
+        }
+    }
     public void view()throws IOException{
       try{
           this.getcustdata();
@@ -53,6 +76,7 @@ public class Empoptions {
         System.out.println("4. "+"\t"+"Close account");
         System.out.println("5. "+"\t"+"transfer funds");
         System.out.println("6. "+"\t"+"Reset Overdraft");
+        System.out.println("7. "+"\t"+"Reset Password");
         int choice=sc.nextInt();
         switch(choice){
             case 1:
@@ -73,6 +97,38 @@ public class Empoptions {
             case 6:
                 this.resetover();
                 break;
+            case 7:
+                this.changepass();
+                break;
+        }
+    }
+    public void changepass()throws IOException{
+       String oldpass;
+       String newpass;
+        
+        try{
+            this.getcustdata();
+            PreparedStatement pstate=connect.prepareStatement("select password from custdata Where custdata.customerid=?");
+            pstate.setInt(1, custid);
+            ResultSet results=pstate.executeQuery();
+            results.next();
+            System.out.println("Enter the customers current password;");
+            oldpass=sc.next();
+            String currentpass=results.getString("password");
+            if(!oldpass.equals(currentpass)){
+                System.out.println("Passwords do not match");
+            }else{
+                System.out.println("Enter your new password: ");
+        newpass=sc.next();
+        PreparedStatement updatepass=connect.prepareStatement("update custdata set password=? Where customerid=?");
+        updatepass.setString(1, newpass);
+        updatepass.setInt(2,custid);
+        updatepass.executeUpdate();
+        System.out.println("Password Successfully updated.");
+            }
+        }catch(SQLException e){
+            System.out.println(e);
+            
         }
     }
     public void resetover()throws IOException{
@@ -83,7 +139,7 @@ public class Empoptions {
              pstate.setDouble(1,500.00);
              pstate.setInt(2, custacctnum);
              pstate.setInt(3,custid);
-             pstate.executeQuery();
+             pstate.executeUpdate();
         }catch(SQLException e){
             
         }
@@ -157,7 +213,7 @@ public class Empoptions {
             System.out.println("How much do you wish to withdraw? Please include the ammount of cents even if it is 0. (Ex: 25.00");
             ammount=sc.nextDouble();
             b-=ammount;
-            System.out.println(b);
+           
             double draft=overdraft-b;
             
             if(b<0){
@@ -221,16 +277,16 @@ public class Empoptions {
              System.out.println("Your current balance for Account: "+results.getInt("acctnum")+" is "+b);
              this.change();
          }else{
-             PreparedStatement delete=connect.prepareStatement("delete from bankaccount where  bankaccount.acctnum=? AND bankaccount.acctowner=?");
+             PreparedStatement delete=connect.prepareStatement("delete from bankaccount where  acctnum=? AND acctowner=?");
              delete.setInt(1,custacctnum);
              delete.setInt(2, custid);
-             delete.executeQuery();
+             delete.executeUpdate();
              System.out.println("The account has been deleted");
          }
              
          
         }catch(SQLException e){
-            
+            System.out.println(e);
         }
     }else
                System.out.println("You do not have suffecient admin rights to perform this action.");
@@ -337,6 +393,8 @@ public class Empoptions {
                        else{
                            b1+=transfer;
                            b2-=transfer;
+                             double balance1=b1-transfer;
+                           double balance2=b2+transfer;
                            PreparedStatement update2=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
                            update2.setDouble(1,(b2));
                            update2.setInt(2, acct2);
@@ -346,6 +404,23 @@ public class Empoptions {
                            update1.setDouble(1,(b1));
                            update1.setInt(2,acct1);
                            update1.executeUpdate();
+                            PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+                                transaction.setInt(1,acct2);
+                                transaction.setDouble(2,balance2);
+                                transaction.setDouble(3,b2);
+                                transaction.setInt(4, custid);
+                                transaction.setString(5,"Transfer");
+                                transaction.executeUpdate();
+                             
+                           
+                        
+                           PreparedStatement transaction2=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+                                 transaction2.setInt(1,acct1);
+                                 transaction2.setDouble(2,balance1);
+                                 transaction2.setDouble(3,b1);
+                                 transaction2.setInt(4, custid);
+                                 transaction2.setString(5, "Transfer");
+                                 transaction2.executeUpdate();
                            
                        }
                        

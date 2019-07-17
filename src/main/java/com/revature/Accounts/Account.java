@@ -55,12 +55,65 @@ public class Account extends bankaccounts{
                 break;
         }
     }
+    public void changepass()throws IOException{
+        String newpass;
+        String oldpass;
+        System.out.println("Enter your current password: ");
+        oldpass=sc.next();
+        
+        try{
+            PreparedStatement pstate=connect.prepareStatement("select password from custdata Where custdata.customerid=?");
+            pstate.setInt(1, customerid);
+            ResultSet results=pstate.executeQuery();
+            results.next();
+            String currentpass=results.getString("password");
+            if(!oldpass.equals(currentpass)){
+                System.out.println("Passwords do not match");
+            }else{
+                System.out.println("Enter your new password: ");
+        newpass=sc.next();
+        PreparedStatement updatepass=connect.prepareStatement("update custdata set password=? Where custdata.customerid=?");
+        updatepass.setString(1, newpass);
+        updatepass.setInt(2, customerid);
+        updatepass.executeUpdate();
+        System.out.println("Password Successfully updated.");
+            }
+        }catch(SQLException e){
+            
+        }
+    }
+    public void viewtransactions(){
+        try{System.out.println("Enter the account number: "+"\t");
+        int choice=sc.nextInt();
+            PreparedStatement pstate=connect.prepareStatement("select* from transactions where transactions.acctnum=? AND transactions.custid=?");
+            pstate.setInt(1,choice);
+            pstate.setInt(2, customerid);
+            ResultSet results=pstate.executeQuery();
+            if(!results.isBeforeFirst()){
+                System.out.println("The account number specified does not match any account numbers for this user.");
+            }else{
+          while(results.next()){
+          System.out.println("\n"+"Account number: "+results.getString("acctnum"));
+          System.out.println("Transaction: "+results.getString("t_type"));
+          System.out.println("Time: "+results.getTime("t_time"));
+          System.out.println("Starting balance: "+results.getDouble("startbalance"));
+          System.out.println("Ending balance: "+results.getString("endbalance")+"\n");
+
+          
+          }}
+        }catch(SQLException e){
+            
+        }
+    }
     
     public void view(){
         try{
             PreparedStatement pstate=connect.prepareStatement("select * from bankaccount inner join customers on bankaccount.acctowner=customers.id Where customers.id=?");
             pstate.setInt(1, customerid);
             ResultSet results= pstate.executeQuery();
+            if(!results.isBeforeFirst()){
+                System.out.println("The account number specified does not match any account numbers for this user.");
+            }else{
           while(results.next()){
           System.out.println("Name on Account: "+results.getString("firstname")+" "+results.getString("lastname"));
           System.out.println("Social: ***-***-"+results.getInt("ssn"));
@@ -70,9 +123,9 @@ public class Account extends bankaccounts{
           System.out.println("Account Balance: "+results.getDouble("balance"));
           System.out.println("Overdraft Ammount:"+results.getDouble("overdraft")+"\n");
           
-          }
+          }}
         }catch(SQLException e){
-            System.out.println(e);
+            
         }
     }
 
@@ -106,6 +159,7 @@ public class Account extends bankaccounts{
               System.out.println("2."+"\t"+"Withdraw funds");
               System.out.println("3."+"\t"+"Transfer funds");
               System.out.println("4."+"\t"+"Close account");
+              System.out.println("5."+"\t"+"Previous menu");
               choice=sc.nextInt();
               switch(choice){
                   case 1:
@@ -135,6 +189,9 @@ public class Account extends bankaccounts{
                       innerchoice=sc.nextInt();
                       if(innerchoice==1)
                           this.change();
+                      break;
+                  case 5:
+                      break;
               }
           }else
               System.out.println("This account is not yet been opened by the bank.");
@@ -144,7 +201,7 @@ public class Account extends bankaccounts{
            
            
        }catch(SQLException e){
-           System.out.println(e);
+           
        }
        
        
@@ -168,14 +225,21 @@ public class Account extends bankaccounts{
                 System.out.println("You cannot deposit an ammount less than 0.00");
                 this.deposit(id);
             }
-            b+=ammount;
+           double b2=b+ammount;
             PreparedStatement input=connect.prepareStatement("Update bankaccount set balance=? Where bankaccount.acctowner=? AND bankaccount.acctnum=?");
-            input.setDouble(1, b);
+            input.setDouble(1, b2);
             input.setInt(2, customerid);
             input.setInt(3,id);
-            input.executeQuery();
+            input.executeUpdate();
+            PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+            transaction.setInt(1,id);
+            transaction.setDouble(2,b);
+            transaction.setDouble(3,b2);
+            transaction.setInt(4, customerid);
+            transaction.setString(5,"Deposit");
+            transaction.executeQuery();
         }catch(SQLException e){
-            
+           
         }
     }
 
@@ -185,6 +249,7 @@ public class Account extends bankaccounts{
         double b;
        double ammount;
        double overdraft;
+       double balance;
         try{
           PreparedStatement pstate=connect.prepareStatement("select * from bankaccount where bankaccount.acctnum=? AND bankaccount.acctowner=? ");
             pstate.setInt(1, id);
@@ -192,6 +257,7 @@ public class Account extends bankaccounts{
             ResultSet results=pstate.executeQuery();
             results.next();
             b=results.getDouble("balance");
+            balance=b;
             overdraft=results.getDouble("overdraft");
             System.out.println("How much do you wish to withdraw? Please include the ammount of cents even if it is 0. (Ex: 25.00");
             ammount=sc.nextDouble();
@@ -224,6 +290,13 @@ public class Account extends bankaccounts{
                     over.setInt(3,id);
                     over.executeUpdate();
                     System.out.println("Withdrawl Successful");
+                    PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+            transaction.setInt(1,id);
+            transaction.setDouble(2,balance);
+            transaction.setDouble(3,b);
+            transaction.setInt(4, customerid);
+            transaction.setString(5,"Withdrawl");
+            transaction.executeQuery();
                 }
                 if(choice==2){
                     System.out.println("No money was withdawn");
@@ -239,6 +312,13 @@ public class Account extends bankaccounts{
             input.setInt(3, id);
             input.executeUpdate();
             System.out.println("Withdrawl Successful");
+            PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+            transaction.setInt(1,id);
+            transaction.setDouble(2,balance);
+            transaction.setDouble(3,b);
+            transaction.setInt(4, customerid);
+            transaction.setString(5,"Withdrawl");
+            transaction.executeQuery();
             }
             
             
@@ -269,6 +349,13 @@ public class Account extends bankaccounts{
              delete.setInt(2, customerid);
              delete.executeQuery();
              System.out.println("The account has been deleted");
+             PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+            transaction.setInt(1,id);
+            transaction.setDouble(2,b);
+            transaction.setDouble(3,b);
+            transaction.setInt(4, customerid);
+            transaction.setString(5, "Closed");
+            transaction.executeQuery();
          }
              
          
@@ -331,15 +418,34 @@ public class Account extends bankaccounts{
                        else{
                            b1+=transfer;
                            b2-=transfer;
+                           double balance1=b1-transfer;
+                           double balance2=b2+transfer;
                            PreparedStatement update2=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
                            update2.setDouble(1,(b2));
                            update2.setInt(2, acct2);
                            update2.executeUpdate();
-                           
-                           PreparedStatement update1=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
+                              PreparedStatement update1=connect.prepareStatement("update bankaccount set balance=? Where bankaccount.acctnum=?");
                            update1.setDouble(1,(b1));
                            update1.setInt(2,acct1);
                            update1.executeUpdate();
+                           PreparedStatement transaction=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+                                transaction.setInt(1,acct2);
+                                transaction.setDouble(2,balance2);
+                                transaction.setDouble(3,b2);
+                                transaction.setInt(4, customerid);
+                                transaction.setString(5,"Transfer");
+                                transaction.executeUpdate();
+                             
+                           
+                        
+                           PreparedStatement transaction2=connect.prepareStatement("insert into transactions(acctnum,startbalance,endbalance,custid,t_type) values(?,?,?,?,?)");
+                                 transaction2.setInt(1,acct1);
+                                 transaction2.setDouble(2,balance1);
+                                 transaction2.setDouble(3,b1);
+                                 transaction2.setInt(4, customerid);
+                                 transaction2.setString(5, "Transfer");
+                                 transaction2.executeUpdate();
+                                 
                            
                        }
                        
@@ -353,7 +459,7 @@ public class Account extends bankaccounts{
                    }
            
        }catch(SQLException e){
-           System.out.println(e);
+         
        }
     }
     }

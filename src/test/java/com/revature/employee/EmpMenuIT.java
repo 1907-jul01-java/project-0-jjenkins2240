@@ -154,7 +154,7 @@ public class EmpMenuIT {
         System.out.println("getAdmin");
         EmpMenu instance = new EmpMenu();
         char expResult = ' ';
-        char result = instance.getAdmin();
+        String result = instance.getAdmin();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -166,7 +166,7 @@ public class EmpMenuIT {
     @Test
     public void testSetAdmin() {
         System.out.println("setAdmin");
-        char admin = ' ';
+       String admin = "";
         EmpMenu instance = new EmpMenu();
         instance.setAdmin(admin);
         // TODO review the generated test code and remove the default call to fail.

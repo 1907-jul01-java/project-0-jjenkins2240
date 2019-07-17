@@ -64,7 +64,7 @@ private static int id;
           pstate.executeQuery();
           
       } catch(SQLException e){
-          System.out.println(e);
+          
       }
       System.out.println("Create your username now: ");
         this.createusername();
@@ -86,7 +86,7 @@ private static int id;
        pstate.executeQuery();
           
       } catch(SQLException e){
-          System.out.println(e);
+       
       }
       Menu mu=new Menu(this.connect);
       System.out.println("Please login with your new credentials");
